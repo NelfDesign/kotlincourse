@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/greetings")
 class GreetingController(val greetingsService: GreetingsService) {
 
-    // ajout du Logguer
+    // add Logger
     companion object : KLogging()
 
     @GetMapping("/{name}")
