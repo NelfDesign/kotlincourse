@@ -4,13 +4,11 @@ import com.kotlinspring.dto.CourseDTO
 import com.kotlinspring.entity.Course
 import com.kotlinspring.service.CourseService
 import com.kotlinspring.util.courseDTO
-import com.kotlinspring.util.courseEntityList
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.just
 import io.mockk.runs
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
@@ -49,8 +47,48 @@ class CourseControllerUnitTest {
     }
 
     @Test
+    fun addCourse_validation() {
+        val courseDto = CourseDTO(null, "", "")
+
+        every { courseServiceMock.addCourse(courseDto) } returns courseDTO(id = 1)
+
+        val result = webTestClient
+            .post()
+            .uri("/v1/courses")
+            .bodyValue(courseDto)
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectBody(String::class.java)
+            .returnResult()
+            .responseBody
+
+        assertEquals("courseDto.category must not be blank, courseDto.name must not be blank", result)
+    }
+
+    @Test
+    fun addCourse_runTimeException() {
+        val courseDto = CourseDTO(null, "Build RestFull Api with Kotlin and SpringBoot", "Dilip")
+
+        val errorMessage = "Unexpected Exception"
+
+        every { courseServiceMock.addCourse(courseDto) } throws RuntimeException(errorMessage)
+
+        val result = webTestClient
+            .post()
+            .uri("/v1/courses")
+            .bodyValue(courseDto)
+            .exchange()
+            .expectStatus().is5xxServerError
+            .expectBody(String::class.java)
+            .returnResult()
+            .responseBody
+
+        assertEquals(errorMessage, result)
+    }
+
+    @Test
     fun retrieveAllCourses(){
-        every { courseServiceMock.retrieveAllCourses() }.returnsMany(
+        every { courseServiceMock.retrieveAllCourses(any()) }.returnsMany(
            listOf(
                courseDTO(id = 1),
                courseDTO(id = 2, name = "Build Reactive Microservices using Spring WebFlux/SpringBoot")
